@@ -1,28 +1,37 @@
-import UnoEngine.*;
+import UnoEngine.CardPiles.ClassicDeckOfCards;
+import UnoEngine.CardPiles.DiscardPile;
+import UnoEngine.Cards.Card;
+import UnoEngine.Cards.EffectCard;
+import UnoEngine.GameUtilities.CardDealer;
+import UnoEngine.GameUtilities.Game;
+import UnoEngine.GameUtilities.PlayerQueue;
+import UnoEngine.PlayerUtilities.Player;
+
+import java.util.Scanner;
 
 public class ClassicGame extends Game {
+    Scanner scanner;
     public ClassicGame() {
-        playerQueue = PlayerQueue.getInstance();
-
-        discardPile = DiscardPile.getInstance();
-        drawPile = DrawPile.getInstance();
-
-//        cardDealer = new CardDealer(new ClassicDeckOfCards(), 7);
-        cardDealer = new CardDealer(new DemoDeckOfCards(), 5);
+        super(PlayerQueue.getInstance(),
+                DiscardPile.getInstance(),
+                new CardDealer(new ClassicDeckOfCards(), 7));
+        scanner = new Scanner(System.in);
     }
 
     @Override
     public void setPlayersInGame(int totalPlayers) {
+        if(totalPlayers > cardDealer.getMaxPlayers()){
+            throw new RuntimeException("Current Deck can not support so many players");
+        }
         playerQueue.setTotalPlayers(totalPlayers);
-        playerQueue.registerPlayer("Jim");
-        playerQueue.registerPlayer("Nick");
-        playerQueue.registerPlayer("Mike");
-        playerQueue.registerPlayer("John");
+        for(int i = 0; i < totalPlayers; i++) {
+            System.out.println("Give your name");
+            playerQueue.registerPlayer(scanner.nextLine());
+        }
     }
 
     @Override
     public void play() {
-        setPlayersInGame(4);
         cardDealer.dealStartingCards(playerQueue.getPlayers());
         cardDealer.deckToDrawPile();
 
@@ -30,9 +39,9 @@ public class ClassicGame extends Game {
 
         while (gameNotEnded()){
             System.out.println("-----------"+ (i++) +"-----------");
-            if(drawPile.isEmpty())
+            if(cardDealer.cannotDealNext())
                 cardDealer.discardedToDraw();
-            System.out.println("Cards remaining in DrawPile: " + drawPile.countCards());
+            System.out.println("Cards remaining in DrawPile: " + cardDealer.cardsRemaining());
 
             displayDiscardTop();
 
@@ -51,7 +60,8 @@ public class ClassicGame extends Game {
         Player currentPlayer = playerQueue.getNextPlayer();
 
         if(currentPlayer.forgotToSayUNO()){
-            givePenalty(currentPlayer);
+            System.out.println("Player didn't say UNO, he gets PENALTY");
+            givePenalty(currentPlayer, 2);
         }
     }
 
